@@ -1,0 +1,761 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>20/10 - Khám phá nguyên tử Crom (Cr) - Kính tặng Thầy</title>
+<style>
+    * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', Tahoma, sans-serif; -webkit-tap-highlight-color: transparent; }
+
+    html, body {
+        width: 100%; height: 100%;
+        overflow: hidden;
+        background: radial-gradient(ellipse at center, #0a0a2a 0%, #05051a 40%, #000 100%);
+        color: white;
+        cursor: grab;
+        touch-action: manipulation;
+    }
+    body.dragging { cursor: grabbing; }
+
+    /* Sao nền - đơn giản hoá cho mobile */
+    .stars {
+        position: fixed; inset: 0;
+        background-image:
+            radial-gradient(1.5px 1.5px at 20px 30px, #fff, transparent),
+            radial-gradient(1px 1px at 120px 80px, #cce, transparent),
+            radial-gradient(1.5px 1.5px at 200px 150px, #fff, transparent),
+            radial-gradient(1px 1px at 300px 60px, #aaf, transparent),
+            radial-gradient(2px 2px at 400px 200px, #fff, transparent),
+            radial-gradient(1px 1px at 500px 100px, #ddf, transparent);
+        background-size: 600px 300px;
+        opacity: 0.7;
+        pointer-events: none;
+        z-index: 0;
+    }
+
+    .scene {
+        position: fixed; inset: 0;
+        perspective: 1400px;
+        perspective-origin: 50% 50%;
+        display: flex; align-items: center; justify-content: center;
+        z-index: 2;
+    }
+
+    .universe {
+        width: 0; height: 0;
+        transform-style: preserve-3d;
+        will-change: transform;
+        contain: layout style;
+    }
+
+    /* ===== HẠT NHÂN ===== */
+    .nucleus {
+        position: absolute;
+        width: 150px; height: 150px;
+        left: -75px; top: -75px;
+        border-radius: 50%;
+        background: radial-gradient(circle at 30% 30%, #ffe680, #ff9900 35%, #cc3300 75%, #660000);
+        box-shadow:
+            0 0 35px #ff6600,
+            0 0 70px #ff3300,
+            0 0 120px rgba(255, 80, 0, 0.5),
+            inset 0 0 30px #ffcc66;
+        display: flex; align-items: center; justify-content: center;
+        text-align: center;
+        padding: 14px;
+        border: 2px solid #ffd966;
+        z-index: 50;
+        cursor: pointer;
+        transition: transform 0.3s;
+    }
+    .nucleus p {
+        font-size: 13px;
+        font-weight: 700;
+        line-height: 1.4;
+        color: #fff;
+        text-shadow: 0 0 8px #000;
+        word-break: break-word;
+        pointer-events: none;
+        position: relative;
+        z-index: 2;
+    }
+
+    /* ===== QUỸ ĐẠO ===== */
+    .orbit {
+        position: absolute;
+        border: 1.2px dashed rgba(140, 200, 255, 0.22);
+        border-radius: 50%;
+        transform-style: preserve-3d;
+        pointer-events: none;
+    }
+    .orbit-1 { width: 300px; height: 300px; left: -150px; top: -150px; transform: rotateX(75deg) rotateY(10deg); }
+    .orbit-2 { width: 400px; height: 400px; left: -200px; top: -200px; transform: rotateX(65deg) rotateY(-55deg); border-color: rgba(180, 140, 255, 0.22); }
+    .orbit-3 { width: 500px; height: 500px; left: -250px; top: -250px; transform: rotateX(20deg) rotateY(60deg); border-color: rgba(140, 255, 200, 0.2); }
+    .orbit-4 { width: 600px; height: 600px; left: -300px; top: -300px; transform: rotateX(80deg) rotateY(30deg); border-color: rgba(255, 200, 140, 0.18); }
+
+    .spinner {
+        position: absolute; inset: 0;
+        transform-style: preserve-3d;
+    }
+    .spinner-1 { animation: spin 20s linear infinite; }
+    .spinner-2 { animation: spin 28s linear infinite reverse; }
+    .spinner-3 { animation: spin 38s linear infinite; }
+    .spinner-4 { animation: spin 46s linear infinite reverse; }
+
+    @keyframes spin {
+        from { transform: rotateZ(0deg); }
+        to   { transform: rotateZ(360deg); }
+    }
+
+    /* ===== ELECTRON ===== */
+    .electron {
+        position: absolute;
+        width: 28px; height: 28px;
+        top: 50%; left: 50%;
+        margin: -14px 0 0 -14px;
+        cursor: pointer;
+        pointer-events: auto;
+        z-index: 10;
+        touch-action: manipulation;
+    }
+    /* Vùng chạm rộng */
+    .electron::before {
+        content: '';
+        position: absolute;
+        inset: -26px;
+        border-radius: 50%;
+    }
+    /* Hình cầu bên trong để scale không bị xung đột với transform định vị */
+    .electron-inner {
+        width: 100%; height: 100%;
+        border-radius: 50%;
+        background: radial-gradient(circle at 32% 32%, #ffffff, #aaddff 25%, #3399ff 60%, #003366 100%);
+        box-shadow:
+            0 0 8px #44aaff,
+            0 0 16px rgba(68,170,255,.6),
+            inset -2px -2px 4px rgba(0,0,0,.4),
+            inset 2px 2px 3px rgba(255,255,255,.6);
+        pointer-events: none;
+        transition: transform 0.25s, opacity 0.3s;
+    }
+    .electron:hover .electron-inner { transform: scale(1.6); }
+
+    .electron.active .electron-inner {
+        transform: scale(2);
+        box-shadow: 0 0 18px #ffff88, 0 0 36px #ffaa00, 0 0 60px #ff6600;
+        animation: activePulse 1.4s ease-in-out infinite alternate;
+    }
+    @keyframes activePulse {
+        from { transform: scale(2); }
+        to   { transform: scale(2.4); }
+    }
+
+    .electron.visited .electron-inner { opacity: 0.35; }
+
+    /* ===== PANEL LỜI CHÚC ===== */
+    .message-panel {
+        position: fixed;
+        left: 50%;
+        bottom: 20px;
+        transform: translateX(-50%) translateY(30px);
+        max-width: 560px;
+        width: 92%;
+        background: linear-gradient(145deg, rgba(10, 30, 70, 0.96), rgba(5, 15, 40, 0.98));
+        border: 1.5px solid rgba(120, 180, 255, 0.6);
+        border-radius: 18px;
+        padding: 20px 22px 16px;
+        text-align: center;
+        box-shadow: 0 0 40px rgba(80, 150, 255, 0.35);
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity 0.4s, transform 0.4s;
+        z-index: 200;
+    }
+    .message-panel.show {
+        opacity: 1;
+        transform: translateX(-50%) translateY(0);
+        pointer-events: auto;
+    }
+    .message-panel .from {
+        font-size: 11px;
+        letter-spacing: 2px;
+        color: #9cf;
+        text-transform: uppercase;
+        margin-bottom: 8px;
+        opacity: 0.85;
+    }
+    .message-panel .text {
+        font-size: 16px;
+        line-height: 1.5;
+        font-weight: 600;
+        color: #fff;
+    }
+    .message-panel .next-hint {
+        margin-top: 10px;
+        font-size: 12px;
+        color: #8ab;
+        font-style: italic;
+    }
+    .message-panel.nucleus-msg {
+        border-color: rgba(255, 200, 100, 0.85);
+        box-shadow: 0 0 40px rgba(255, 180, 80, 0.5);
+        background: linear-gradient(145deg, rgba(70, 30, 10, 0.96), rgba(40, 15, 5, 0.98));
+    }
+    .message-panel.nucleus-msg .from { color: #ffcc88; }
+
+    .panel-actions {
+        display: flex;
+        gap: 10px;
+        margin-top: 14px;
+        justify-content: center;
+        flex-wrap: wrap;
+    }
+    .btn {
+        padding: 12px 20px;
+        border-radius: 12px;
+        border: 1.5px solid rgba(120, 180, 255, 0.6);
+        background: linear-gradient(145deg, rgba(30, 70, 140, 0.9), rgba(15, 40, 90, 0.9));
+        color: #fff;
+        font-size: 14px;
+        font-weight: 700;
+        cursor: pointer;
+        transition: all 0.15s;
+        font-family: inherit;
+        min-height: 44px;
+        touch-action: manipulation;
+    }
+    .btn:active { transform: scale(0.97); }
+    .btn.btn-next {
+        background: linear-gradient(145deg, rgba(200, 130, 20, 0.95), rgba(140, 80, 10, 0.95));
+        border-color: rgba(255, 200, 100, 0.8);
+    }
+    .btn.btn-done {
+        background: linear-gradient(145deg, rgba(120, 40, 140, 0.95), rgba(70, 20, 90, 0.95));
+        border-color: rgba(200, 130, 255, 0.7);
+    }
+
+    /* ===== HUD ===== */
+    .title {
+        position: fixed;
+        top: 16px; left: 0; width: 100%;
+        text-align: center;
+        font-size: 16px;
+        font-weight: 800;
+        letter-spacing: 1.5px;
+        color: #bfe0ff;
+        text-shadow: 0 0 10px #2266ff, 0 0 20px #0044aa;
+        pointer-events: none;
+        z-index: 100;
+        padding: 0 10px;
+    }
+
+    .progress {
+        position: fixed;
+        top: 46px; left: 50%;
+        transform: translateX(-50%);
+        display: flex; gap: 6px;
+        z-index: 100;
+        pointer-events: none;
+    }
+    .dot {
+        width: 9px; height: 9px;
+        border-radius: 50%;
+        background: rgba(100, 150, 220, 0.3);
+        border: 1px solid rgba(120, 180, 255, 0.5);
+        transition: all 0.3s;
+    }
+    .dot.done { background: #4cf; box-shadow: 0 0 6px #4cf; }
+    .dot.current { background: #ffcc00; box-shadow: 0 0 10px #ffcc00; transform: scale(1.3); }
+
+    .hint {
+        position: fixed;
+        bottom: 10px; left: 0; width: 100%;
+        text-align: center;
+        font-size: 11px;
+        color: rgba(200, 220, 255, 0.55);
+        pointer-events: none;
+        z-index: 100;
+        padding: 0 10px;
+        transition: opacity 0.3s;
+    }
+    .hint b { color: #9cf; }
+
+    .btn-back {
+        position: fixed;
+        top: 12px; right: 12px;
+        padding: 10px 14px;
+        background: rgba(20, 40, 80, 0.85);
+        border: 1px solid rgba(120, 180, 255, 0.5);
+        border-radius: 10px;
+        color: #bfe0ff;
+        font-size: 13px;
+        cursor: pointer;
+        z-index: 150;
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity 0.3s;
+        font-family: inherit;
+        min-height: 40px;
+        touch-action: manipulation;
+    }
+    .btn-back.show { opacity: 1; pointer-events: auto; }
+    .btn-back:active { transform: scale(0.97); }
+
+    /* Focus mode: làm mờ bớt để nổi bật electron đang active */
+    .focus-mode .orbit { opacity: 0.2; }
+    .focus-mode .electron:not(.active) .electron-inner { opacity: 0.2; }
+    .nucleus-focus .orbit { opacity: 0.1; }
+    .nucleus-focus .electron .electron-inner { opacity: 0.1; }
+
+    /* ===== MOBILE - tối ưu hiệu năng ===== */
+    @media (max-width: 720px) {
+        .title { font-size: 14px; top: 12px; }
+        .progress { top: 38px; }
+        .dot { width: 8px; height: 8px; }
+        .nucleus { width: 130px; height: 130px; left: -65px; top: -65px; }
+        .nucleus p { font-size: 11px; }
+        .electron { width: 36px; height: 36px; margin: -18px 0 0 -18px; }
+        .electron::before { inset: -30px; } /* vùng chạm ~96px */
+
+        /* Giảm độ phức tạp box-shadow trên mobile */
+        .electron-inner {
+            box-shadow: 0 0 6px #44aaff, inset -1px -1px 3px rgba(0,0,0,.4);
+        }
+        .nucleus {
+            box-shadow: 0 0 30px #ff5500, inset 0 0 20px #ffcc66;
+        }
+        .electron.active .electron-inner {
+            box-shadow: 0 0 20px #ffcc00, 0 0 40px #ff8800;
+        }
+
+        /* Tắt xoay quỹ đạo trên mobile nếu quá lag — giữ nhưng chậm hơn */
+        /* (vẫn giữ để có hiệu ứng, chỉ giảm độ phức tạp shadow ở trên) */
+
+        .message-panel {
+            bottom: 12px;
+            padding: 16px 16px 14px;
+            border-radius: 16px;
+            width: 94%;
+        }
+        .message-panel .text { font-size: 15px; }
+        .message-panel .next-hint { font-size: 11px; margin-top: 8px; }
+        .btn { padding: 14px 22px; font-size: 15px; min-height: 50px; width: 100%; }
+        .panel-actions { flex-direction: column; gap: 8px; }
+        .hint { font-size: 10px; bottom: 6px; }
+        .btn-back { padding: 10px 12px; font-size: 12px; }
+    }
+
+    @media (max-height: 500px) and (orientation: landscape) {
+        .message-panel { bottom: 8px; padding: 12px 16px; max-height: 80vh; overflow-y: auto; }
+        .message-panel .text { font-size: 14px; }
+        .btn { padding: 10px 16px; font-size: 13px; min-height: 40px; }
+        .title { font-size: 13px; }
+    }
+
+    /* Tôn trọng cài đặt giảm chuyển động của người dùng */
+    @media (prefers-reduced-motion: reduce) {
+        .spinner-1, .spinner-2, .spinner-3, .spinner-4 { animation: none; }
+        .electron.active .electron-inner { animation: none; transform: scale(2.2); }
+    }
+</style>
+</head>
+<body>
+
+<div class="stars"></div>
+
+<div class="title">✦ 20/10 — Kính tặng Thầy giáo Hóa học ✦</div>
+
+<div class="progress" id="progress"></div>
+
+<div class="scene">
+    <div class="universe" id="universe">
+        <div class="nucleus" id="nucleus">
+            <p>Chạm vào bất kỳ electron nào để nhận lời chúc 💌</p>
+        </div>
+    </div>
+</div>
+
+<div class="message-panel" id="messagePanel">
+    <div class="from" id="msgFrom"></div>
+    <div class="text" id="msgText"></div>
+    <div class="next-hint" id="msgHint"></div>
+    <div class="panel-actions">
+        <button class="btn btn-next" id="btnNext">Lời chúc tiếp theo →</button>
+    </div>
+</div>
+
+<button class="btn-back" id="btnBack">← Tổng thể</button>
+
+<div class="hint" id="hint">🖱️ <b>Kéo</b> xoay • <b>Chạm</b> electron bất kỳ để nhận lời chúc</div>
+
+<script>
+/* =========================================================
+   CROM (Cr) — 24 electron chia 4 vành (4+6+8+6)
+   Chạm bất kỳ electron nào → hiện lời chúc tuần tự
+   Lời chúc dành cho THẦY
+   ========================================================= */
+
+const ORBITS = [
+    { r: 150, count: 4, tilt: 'rotateX(75deg) rotateY(10deg)' },
+    { r: 200, count: 6, tilt: 'rotateX(65deg) rotateY(-55deg)' },
+    { r: 250, count: 8, tilt: 'rotateX(20deg) rotateY(60deg)' },
+    { r: 300, count: 6, tilt: 'rotateX(80deg) rotateY(30deg)' },
+];
+
+const MESSAGES = [
+    { from: 'Electron #1 · Lớp K', text: 'Kính chúc Thầy 20/10 thật rạng rỡ, luôn tỏa sáng như phản ứng phát quang ạ! 💙' },
+    { from: 'Electron #2 · Lớp L', text: 'Mong Thầy luôn an nhiên và bền vững như khí hiếm — không gì lay chuyển được! 🌿' },
+    { from: 'Electron #3 · Lớp M', text: 'Chúc mỗi ngày của Thầy ngọt ngào như đường Saccarozơ, C₁₂H₂₂O₁₁! 🍬' },
+    { from: 'Electron #4 · Lớp M', text: 'Thầy chính là "nguyên tố thiết yếu" không thể thiếu trong bảng tuần hoàn của tụi em! ⚛️' },
+    { from: 'Electron #5 · Lớp N', text: 'Kính chúc Thầy thật nhiều sức khỏe, niềm vui và mãi là "chất xúc tác" tuyệt vời của chúng em! 🌸' },
+];
+
+const NUCLEUS_MESSAGE = {
+    from: 'Hạt nhân · Proton (Cr)',
+    text: 'Cảm ơn Thầy đã là "hạt nhân" vững chắc của lớp học — luôn kết nối, luôn tỏa năng lượng tích cực, và dìu dắt tụi em nên người. Kính chúc Thầy 20/10 thật nhiều hạnh phúc! ❤️⚛️'
+};
+
+const universe = document.getElementById('universe');
+const nucleus = document.getElementById('nucleus');
+const messagePanel = document.getElementById('messagePanel');
+const msgFrom = document.getElementById('msgFrom');
+const msgText = document.getElementById('msgText');
+const msgHint = document.getElementById('msgHint');
+const btnNext = document.getElementById('btnNext');
+const btnBack = document.getElementById('btnBack');
+const progressBar = document.getElementById('progress');
+const hint = document.getElementById('hint');
+const scene = document.querySelector('.scene');
+
+const allElectrons = [];       // tất cả 24 electron (đều bấm được)
+const chosenElectrons = [];    // 5 electron đại diện cho 5 lời chúc
+let messageProgress = 0;       // 0..5 (5 = sẵn sàng hiện nucleus), >5 = hết
+let currentIdx = -1;           // -1 = tổng thể, >=0 = đang focus
+
+/* ====== TẠO NGUYÊN TỬ ====== */
+ORBITS.forEach((orb, oi) => {
+    const orbit = document.createElement('div');
+    orbit.className = 'orbit';
+    orbit.style.width = orbit.style.height = (orb.r * 2) + 'px';
+    orbit.style.left = orbit.style.top = (-orb.r) + 'px';
+    orbit.style.transform = orb.tilt;
+
+    const spinner = document.createElement('div');
+    spinner.className = 'spinner';
+    spinner.style.animation = `spin ${20 + oi * 8}s linear infinite ${oi % 2 === 1 ? 'reverse' : ''}`;
+
+    for (let i = 0; i < orb.count; i++) {
+        const angle = (360 / orb.count) * i;
+        const e = document.createElement('div');
+        e.className = 'electron';
+        e.style.transform = `rotateZ(${angle}deg) translateX(${orb.r}px)`;
+        e.innerHTML = '<div class="electron-inner"></div>';
+        e.addEventListener('click', (ev) => { ev.stopPropagation(); advance(); });
+        e.addEventListener('touchend', (ev) => { ev.stopPropagation(); ev.preventDefault(); advance(); }, {passive: false});
+        spinner.appendChild(e);
+        allElectrons.push(e);
+
+        // 5 electron đầu của vành 1, 2, 3 là "chosen"
+        if ((oi === 0 && i < 2) || (oi === 1 && i < 2) || (oi === 2 && i < 1)) {
+            e.dataset.chosenIdx = chosenElectrons.length;
+            chosenElectrons.push(e);
+        }
+    }
+    orbit.appendChild(spinner);
+    universe.appendChild(orbit);
+});
+
+/* Progress dots */
+for (let i = 0; i < MESSAGES.length; i++) {
+    const d = document.createElement('div');
+    d.className = 'dot';
+    d.dataset.idx = i;
+    progressBar.appendChild(d);
+}
+{
+    const d = document.createElement('div');
+    d.className = 'dot';
+    d.dataset.idx = 'nucleus';
+    progressBar.appendChild(d);
+}
+
+/* ====== XOAY UNIVERSE ====== */
+let uniRotX = -18, uniRotY = 12;
+function applyUniverseTransform() {
+    universe.style.transform = `rotateX(${uniRotX}deg) rotateY(${uniRotY}deg)`;
+}
+applyUniverseTransform();
+
+function setSpinners(paused) {
+    document.querySelectorAll('.spinner').forEach(s => {
+        s.style.animationPlayState = paused ? 'paused' : 'running';
+    });
+}
+
+/* ====== TIẾN TRÌNH CHÍNH ====== */
+function advance() {
+    if (messageProgress < MESSAGES.length) {
+        showElectronMessage(messageProgress);
+        messageProgress++;
+    } else if (messageProgress === MESSAGES.length) {
+        showNucleusMessage();
+        messageProgress++;
+    } else {
+        resetView(); // đã hết — reset
+    }
+}
+
+/* ====== HIỆN LỜI CHÚC CỦA ELECTRON ====== */
+function showElectronMessage(idx) {
+    currentIdx = idx;
+
+    // Bỏ active cũ, đánh dấu visited cho electron trước
+    chosenElectrons.forEach((e, i) => {
+        e.classList.remove('active');
+        if (i < idx) e.classList.add('visited');
+    });
+    const target = chosenElectrons[idx];
+    target.classList.add('active');
+    target.classList.remove('visited');
+    nucleus.classList.remove('focus');
+
+    // Tạm dừng spinner để electron đứng yên, focus chính xác
+    setSpinners(true);
+
+    // Dịch universe để đưa electron ra giữa
+    const rect = target.getBoundingClientRect();
+    const cx = window.innerWidth / 2;
+    const cy = window.innerHeight / 2;
+    const dx = cx - (rect.left + rect.width / 2);
+    const dy = cy - (rect.top + rect.height / 2);
+
+    const base = `rotateX(${uniRotX}deg) rotateY(${uniRotY}deg)`;
+    universe.style.transition = 'transform 0.6s ease-out';
+    universe.style.transform = `translate3d(${dx}px, ${dy}px, 0) scale(2.2) ${base}`;
+
+    showMessage(MESSAGES[idx], false, idx);
+    updateProgress(idx);
+    document.body.classList.add('focus-mode');
+    document.body.classList.remove('nucleus-focus');
+    btnBack.classList.add('show');
+    hint.style.opacity = 0;
+}
+
+/* ====== HIỆN LỜI CHÚC CỦA NUCLEUS ====== */
+function showNucleusMessage() {
+    currentIdx = 5;
+    chosenElectrons.forEach(e => {
+        e.classList.remove('active');
+        e.classList.add('visited');
+    });
+    nucleus.classList.add('focus');
+
+    setSpinners(true);
+
+    const base = `rotateX(${uniRotX}deg) rotateY(${uniRotY}deg)`;
+    universe.style.transition = 'transform 0.6s ease-out';
+    universe.style.transform = `translate3d(0, 0, 0) scale(2.4) ${base}`;
+
+    // Đổi nội dung nucleus
+    nucleus.querySelector('p').textContent = NUCLEUS_MESSAGE.text;
+    nucleus.style.width = '200px';
+    nucleus.style.height = '200px';
+    nucleus.style.left = '-100px';
+    nucleus.style.top = '-100px';
+
+    showMessage(NUCLEUS_MESSAGE, true, 'nucleus');
+    updateProgress('nucleus');
+    document.body.classList.add('focus-mode', 'nucleus-focus');
+    btnBack.classList.add('show');
+    hint.style.opacity = 0;
+}
+
+/* ====== RESET ====== */
+function resetView() {
+    messageProgress = 0;
+    currentIdx = -1;
+
+    chosenElectrons.forEach(e => e.classList.remove('active', 'visited'));
+    nucleus.classList.remove('focus');
+
+    nucleus.querySelector('p').textContent = 'Chạm vào bất kỳ electron nào để nhận lời chúc 💌';
+    nucleus.style.width = '150px';
+    nucleus.style.height = '150px';
+    nucleus.style.left = '-75px';
+    nucleus.style.top = '-75px';
+
+    setSpinners(false);
+
+    const base = `rotateX(${uniRotX}deg) rotateY(${uniRotY}deg)`;
+    universe.style.transition = 'transform 0.6s ease-out';
+    universe.style.transform = `translate3d(0, 0, 0) scale(1) ${base}`;
+
+    hideMessage();
+    document.body.classList.remove('focus-mode', 'nucleus-focus');
+    btnBack.classList.remove('show');
+    hint.style.opacity = 1;
+    document.querySelectorAll('.dot').forEach(d => d.classList.remove('done', 'current'));
+}
+
+/* ====== PANEL ====== */
+function showMessage(msg, isNucleus, idx) {
+    msgFrom.textContent = msg.from;
+    msgText.textContent = msg.text;
+
+    let nextLabel, nextClass, nextAction;
+    if (isNucleus) {
+        nextLabel = '↻ Xem lại toàn bộ';
+        nextClass = 'btn btn-done';
+        nextAction = resetView;
+        msgHint.textContent = '🎉 Đã xong — cảm ơn Thầy đã đọc hết lời chúc của tụi em!';
+    } else {
+        const remain = MESSAGES.length - 1 - idx;
+        if (remain > 0) {
+            nextLabel = `Lời chúc tiếp theo → (còn ${remain})`;
+            msgHint.textContent = 'Hoặc chạm vào bất kỳ electron nào khác';
+        } else {
+            nextLabel = 'Đi tới Hạt nhân →';
+            msgHint.textContent = 'Chạm HẠT NHÂN hoặc bấm nút để xem lời chúc chính';
+        }
+        nextClass = 'btn btn-next';
+        nextAction = advance;
+    }
+    btnNext.textContent = nextLabel;
+    btnNext.className = nextClass;
+    btnNext.onclick = (e) => { e.stopPropagation(); nextAction(); };
+
+    messagePanel.classList.toggle('nucleus-msg', isNucleus);
+    messagePanel.classList.add('show');
+}
+
+function hideMessage() {
+    messagePanel.classList.remove('show');
+}
+
+function updateProgress(idx) {
+    document.querySelectorAll('.dot').forEach(d => {
+        d.classList.remove('done', 'current');
+        const di = d.dataset.idx;
+        if (idx === 'nucleus') {
+            if (di === 'nucleus') d.classList.add('current');
+            else d.classList.add('done');
+        } else if (typeof idx === 'number') {
+            const ni = parseInt(di);
+            if (ni === idx) d.classList.add('current');
+            else if (ni < idx) d.classList.add('done');
+        }
+    });
+}
+
+/* ====== SỰ KIỆN ====== */
+nucleus.addEventListener('click', (e) => { e.stopPropagation(); advance(); });
+nucleus.addEventListener('touchend', (e) => { e.stopPropagation(); e.preventDefault(); advance(); }, {passive: false});
+
+btnBack.addEventListener('click', (e) => { e.stopPropagation(); resetView(); });
+btnBack.addEventListener('touchend', (e) => { e.stopPropagation(); e.preventDefault(); resetView(); }, {passive: false});
+
+// Chạm vào vùng trống trong chế độ focus cũng tiến trình
+scene.addEventListener('click', (e) => {
+    if (currentIdx === -1) return;
+    if (e.target.closest('.message-panel') || e.target.closest('.btn-back')) return;
+    if (e.target.closest('.electron') || e.target.closest('.nucleus')) return;
+    advance();
+});
+
+/* ====== KÉO XOAY 3D ====== */
+let isDragging = false;
+let lastX = 0, lastY = 0;
+let velX = 0, velY = 0;
+let autoSpin = true;
+
+scene.addEventListener('mousedown', (e) => {
+    if (currentIdx !== -1) return;
+    if (e.target.closest('.electron') || e.target.closest('.nucleus')) return;
+    isDragging = true; autoSpin = false;
+    lastX = e.clientX; lastY = e.clientY;
+    velX = velY = 0;
+    document.body.classList.add('dragging');
+});
+window.addEventListener('mousemove', (e) => {
+    if (!isDragging) return;
+    const dx = e.clientX - lastX;
+    const dy = e.clientY - lastY;
+    lastX = e.clientX; lastY = e.clientY;
+    uniRotY += dx * 0.4;
+    uniRotX -= dy * 0.4;
+    uniRotX = Math.max(-89, Math.min(89, uniRotX));
+    velX = dx * 0.4; velY = -dy * 0.4;
+    applyUniverseTransform();
+});
+window.addEventListener('mouseup', () => {
+    if (!isDragging) return;
+    isDragging = false;
+    document.body.classList.remove('dragging');
+    setTimeout(() => { if (!isDragging && currentIdx === -1) autoSpin = true; }, 1500);
+});
+
+/* Touch drag */
+let touchStartX = 0, touchStartY = 0, touchMoved = false;
+
+scene.addEventListener('touchstart', (e) => {
+    if (e.target.closest('.electron') || e.target.closest('.nucleus') ||
+        e.target.closest('.message-panel') || e.target.closest('.btn-back')) return;
+    const t = e.touches[0];
+    touchStartX = t.clientX;
+    touchStartY = t.clientY;
+    touchMoved = false;
+    if (currentIdx === -1) {
+        isDragging = true; autoSpin = false;
+        lastX = t.clientX; lastY = t.clientY;
+        velX = velY = 0;
+    }
+}, { passive: true });
+
+scene.addEventListener('touchmove', (e) => {
+    const t = e.touches[0];
+    if (Math.abs(t.clientX - touchStartX) > 10 || Math.abs(t.clientY - touchStartY) > 10) {
+        touchMoved = true;
+    }
+    if (!isDragging) return;
+    const dx = t.clientX - lastX;
+    const dy = t.clientY - lastY;
+    lastX = t.clientX; lastY = t.clientY;
+    uniRotY += dx * 0.5;
+    uniRotX -= dy * 0.5;
+    uniRotX = Math.max(-89, Math.min(89, uniRotX));
+    velX = dx * 0.5; velY = -dy * 0.5;
+    applyUniverseTransform();
+}, { passive: true });
+
+scene.addEventListener('touchend', (e) => {
+    if (isDragging) {
+        isDragging = false;
+        setTimeout(() => { if (!isDragging && currentIdx === -1) autoSpin = true; }, 1500);
+    }
+    if (currentIdx !== -1 && !touchMoved) {
+        if (e.target.closest('.message-panel') || e.target.closest('.btn-back') ||
+            e.target.closest('.electron') || e.target.closest('.nucleus')) return;
+        advance();
+    }
+});
+
+/* ====== VÒNG LẶP XOAY ====== */
+function animate() {
+    if (!isDragging && currentIdx === -1) {
+        if (Math.abs(velX) > 0.01 || Math.abs(velY) > 0.01) {
+            uniRotY += velX;
+            uniRotX += velY;
+            uniRotX = Math.max(-89, Math.min(89, uniRotX));
+            velX *= 0.95; velY *= 0.95;
+            applyUniverseTransform();
+        } else if (autoSpin) {
+            uniRotY += 0.08;
+            applyUniverseTransform();
+        }
+    }
+    requestAnimationFrame(animate);
+}
+animate();
+</script>
+</body>
+</html>
